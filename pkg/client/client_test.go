@@ -126,7 +126,7 @@ func TestDescribeUnreachable(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected the connection to fail")
 	}
-	msg := Describe(err, "pgui")
+	msg := Describe(err, "tablespace")
 	if !strings.Contains(msg, "is the server running?") || strings.Contains(msg, "hunter2") {
 		t.Errorf("unexpected %q", msg)
 	}
@@ -134,11 +134,11 @@ func TestDescribeUnreachable(t *testing.T) {
 
 func TestDescribeServerRefusal(t *testing.T) {
 	err := fmt.Errorf("failed to connect: tls error: refused; %w", &pgconn.PgError{Severity: "FATAL", Code: "28P01", Message: `password authentication failed for user "app"`})
-	msg := Describe(err, "pgui")
+	msg := Describe(err, "tablespace")
 	if !strings.HasPrefix(msg, `error connecting to postgres: password authentication failed for user "app"`+"\n") || strings.Contains(msg, "tls") || !strings.Contains(msg, "PGPASSWORD") {
 		t.Errorf("unexpected %q", msg)
 	}
-	msg = Describe(&pgconn.PgError{Code: "3D000", Message: `database "shop" does not exist`}, "pgui")
+	msg = Describe(&pgconn.PgError{Code: "3D000", Message: `database "shop" does not exist`}, "tablespace")
 	if !strings.Contains(msg, "--dbname") {
 		t.Errorf("expected a hint at --dbname, got %q", msg)
 	}

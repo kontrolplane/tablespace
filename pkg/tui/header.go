@@ -9,7 +9,7 @@ import (
 	"charm.land/lipgloss/v2"
 	"github.com/charmbracelet/x/ansi"
 
-	"github.com/kontrolplane/pgui/pkg/tui/styles"
+	"github.com/kontrolplane/tablespace/pkg/tui/styles"
 )
 
 // spread places left and right on one line of the given width.

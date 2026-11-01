@@ -15,14 +15,14 @@ compile:
     ARG VERSION=dev
     ARG USEROS
     ARG USERARCH
-    RUN CGO_ENABLED=0 GOOS=${USEROS} GOARCH=${USERARCH} go build -trimpath -ldflags "-s -w -X main.version=${VERSION}" -o build/kontrolplane/pgui .
-    SAVE ARTIFACT build/kontrolplane/pgui AS LOCAL build/kontrolplane/pgui
+    RUN CGO_ENABLED=0 GOOS=${USEROS} GOARCH=${USERARCH} go build -trimpath -ldflags "-s -w -X main.version=${VERSION}" -o build/kontrolplane/tablespace .
+    SAVE ARTIFACT build/kontrolplane/tablespace AS LOCAL build/kontrolplane/tablespace
 
 container:
     ARG VERSION=dev
     FROM DOCKERFILE --build-arg VERSION=${VERSION} .
     ARG tag="latest"
-    SAVE IMAGE ghcr.io/kontrolplane/pgui:${tag}
+    SAVE IMAGE ghcr.io/kontrolplane/tablespace:${tag}
 
 # postgres starts the server in docker compose and waits until it takes connections.
 postgres:
@@ -50,7 +50,7 @@ dev:
     WAIT
         BUILD +seed
     END
-    RUN go build -o build/kontrolplane/pgui .
+    RUN go build -o build/kontrolplane/tablespace .
 
 list:
     LOCALLY

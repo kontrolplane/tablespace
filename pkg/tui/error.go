@@ -5,7 +5,7 @@ import (
 
 	"charm.land/lipgloss/v2"
 
-	"github.com/kontrolplane/pgui/pkg/tui/styles"
+	"github.com/kontrolplane/tablespace/pkg/tui/styles"
 )
 
 var errNoPageSelected = "no page selected"

@@ -3,7 +3,7 @@ package main
 import (
 	"runtime/debug"
 
-	"github.com/kontrolplane/pgui/cmd"
+	"github.com/kontrolplane/tablespace/cmd"
 )
 
 var (

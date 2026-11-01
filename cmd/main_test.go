@@ -13,7 +13,7 @@ import (
 func run(t *testing.T, args []string, env ...string) (stdout, stderr string, code int) {
 	t.Helper()
 	cmd := exec.Command(os.Args[0], "-test.run=^TestRunProgram$")
-	cmd.Env = append(os.Environ(), append([]string{"PGUI_RUN_ARGS=" + strings.Join(args, "\x1f")}, env...)...)
+	cmd.Env = append(os.Environ(), append([]string{"TABLESPACE_RUN_ARGS=" + strings.Join(args, "\x1f")}, env...)...)
 	var out, errOut bytes.Buffer
 	cmd.Stdout, cmd.Stderr = &out, &errOut
 	err := cmd.Run()
@@ -27,7 +27,7 @@ func run(t *testing.T, args []string, env ...string) (stdout, stderr string, cod
 
 // TestRunProgram runs the program when asked to by run, and does nothing otherwise.
 func TestRunProgram(t *testing.T) {
-	args, ok := os.LookupEnv("PGUI_RUN_ARGS")
+	args, ok := os.LookupEnv("TABLESPACE_RUN_ARGS")
 	if !ok {
 		return
 	}
@@ -43,7 +43,7 @@ func TestHelpGoesToStdout(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("expected --help to exit 0, got %d: %s", code, errOut)
 	}
-	for _, want := range []string{"usage: pgui [flags]", "  -d, --dbname string", "  -U, --user string", "  --host string", "  --read-only", `(default "auto")`} {
+	for _, want := range []string{"usage: tablespace [flags]", "  -d, --dbname string", "  -U, --user string", "  --host string", "  --read-only", `(default "auto")`} {
 		if !strings.Contains(out, want) {
 			t.Errorf("expected the help on stdout to contain %q:\n%s", want, out)
 		}
@@ -71,7 +71,7 @@ func TestBadArgumentsExitTwo(t *testing.T) {
 func TestVersion(t *testing.T) {
 	out, _, code := run(t, []string{"--version"})
 	// The test binary adds its own PASS after the program returns.
-	if code != 0 || !strings.HasPrefix(out, "pgui dev (commit none, built unknown)\n") {
+	if code != 0 || !strings.HasPrefix(out, "tablespace dev (commit none, built unknown)\n") {
 		t.Errorf("unexpected version output %q (exit %d)", out, code)
 	}
 }

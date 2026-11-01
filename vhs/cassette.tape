@@ -7,7 +7,7 @@ Set TypingSpeed 100ms
 Output ./assets/cassette.gif
 
 Hide
-  Type@10ms "go build -o build/kontrolplane/pgui . && clear && PGPASSWORD=postgres ./build/kontrolplane/pgui --host localhost --user postgres --dbname shop"
+  Type@10ms "go build -o build/kontrolplane/tablespace . && clear && PGPASSWORD=postgres ./build/kontrolplane/tablespace --host localhost --user postgres --dbname shop"
   Enter
   Wait+Screen@60s /connected/
   Sleep 1s

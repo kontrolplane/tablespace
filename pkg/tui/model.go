@@ -7,10 +7,10 @@ import (
 	"charm.land/bubbles/v2/spinner"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/kontrolplane/pgui/pkg/client"
-	keys "github.com/kontrolplane/pgui/pkg/keys"
-	"github.com/kontrolplane/pgui/pkg/pgui"
-	"github.com/kontrolplane/pgui/pkg/tui/styles"
+	"github.com/kontrolplane/tablespace/pkg/client"
+	keys "github.com/kontrolplane/tablespace/pkg/keys"
+	"github.com/kontrolplane/tablespace/pkg/tablespace"
+	"github.com/kontrolplane/tablespace/pkg/tui/styles"
 )
 
 // Layout constants for consistent sizing across all views
@@ -83,10 +83,10 @@ type model struct {
 	page        page
 	state       state
 	pool        *pgxpool.Pool
-	config      *pgxpool.Config // what pool was opened with, other databases are opened from it
-	session     *pgui.Session   // the editor's connection
+	config      *pgxpool.Config     // what pool was opened with, other databases are opened from it
+	session     *tablespace.Session // the editor's connection
 	info        client.Info
-	server      pgui.Server
+	server      tablespace.Server
 	serverOK    bool
 	online      bool // the last round trip to the server succeeded
 	context     context.Context

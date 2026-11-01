@@ -8,7 +8,7 @@ import (
 
 	"github.com/charmbracelet/x/ansi"
 
-	"github.com/kontrolplane/pgui/pkg/tui/styles"
+	"github.com/kontrolplane/tablespace/pkg/tui/styles"
 )
 
 // The view is drawn again after every message, and a page of rows with many columns is a lot of

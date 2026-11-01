@@ -12,10 +12,10 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 
-	"github.com/kontrolplane/pgui/pkg/pgui"
-	"github.com/kontrolplane/pgui/pkg/tui/commands"
-	"github.com/kontrolplane/pgui/pkg/tui/messages"
-	"github.com/kontrolplane/pgui/pkg/tui/styles"
+	"github.com/kontrolplane/tablespace/pkg/tablespace"
+	"github.com/kontrolplane/tablespace/pkg/tui/commands"
+	"github.com/kontrolplane/tablespace/pkg/tui/messages"
+	"github.com/kontrolplane/tablespace/pkg/tui/styles"
 )
 
 type editorFocus int
@@ -37,7 +37,7 @@ type sqlEditorState struct {
 	started time.Time
 	gen     uint64
 
-	result    *pgui.QueryResult
+	result    *tablespace.QueryResult
 	errText   string // why the last run failed
 	ran       string // the query the result is of
 	table     dataTable
@@ -164,7 +164,7 @@ func (m model) applyQuery(msg messages.QueryRanMsg) (model, tea.Cmd) {
 	e.table.SetCursor(0)
 	if msg.Err != nil {
 		e.errText = errorText(msg.Err)
-		if pgui.IsCanceled(msg.Err) {
+		if tablespace.IsCanceled(msg.Err) {
 			e.errText = "cancelled"
 		}
 	}
@@ -178,9 +178,9 @@ func (m model) updateResultsTable() model {
 		return m
 	}
 	fields := e.result.Fields
-	rows := make([]pgui.Row, len(e.result.Rows))
+	rows := make([]tablespace.Row, len(e.result.Rows))
 	for i, r := range e.result.Rows {
-		rows[i] = pgui.Row{Values: r}
+		rows[i] = tablespace.Row{Values: r}
 	}
 	e.colOffset = max(0, min(e.colOffset, len(fields)-1))
 	var cols []column
@@ -338,7 +338,7 @@ func (m model) SQLEditorUpdate(msg tea.Msg) (model, tea.Cmd) {
 }
 
 // resultTypes names the types of a result's fields that are known by their oid.
-func resultTypes(fields []pgui.Field) []string {
+func resultTypes(fields []tablespace.Field) []string {
 	names := map[uint32]string{16: "boolean", 17: "bytea", 20: "bigint", 21: "smallint", 23: "integer", 25: "text", 114: "json", 700: "real", 701: "double precision", 1043: "character varying", 1082: "date", 1114: "timestamp", 1184: "timestamp with time zone", 1700: "numeric", 2950: "uuid", 3802: "jsonb"}
 	types := make([]string, len(fields))
 	for i, f := range fields {
@@ -347,12 +347,12 @@ func resultTypes(fields []pgui.Field) []string {
 	return types
 }
 
-func (m model) currentResultRow() (pgui.Row, bool) {
+func (m model) currentResultRow() (tablespace.Row, bool) {
 	e := m.state.sqlEditor
 	if e.result == nil || len(e.result.Rows) == 0 {
-		return pgui.Row{}, false
+		return tablespace.Row{}, false
 	}
-	return pgui.Row{Values: e.result.Rows[e.table.Cursor()]}, true
+	return tablespace.Row{Values: e.result.Rows[e.table.Cursor()]}, true
 }
 
 // resultLine says how the last run went: the tags of its statements, how long it took, and

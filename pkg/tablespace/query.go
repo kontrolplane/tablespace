@@ -1,4 +1,4 @@
-package pgui
+package tablespace
 
 import (
 	"context"

@@ -6,23 +6,23 @@ package messages
 import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/kontrolplane/pgui/pkg/pgui"
+	"github.com/kontrolplane/tablespace/pkg/tablespace"
 )
 
 type ServerLoadedMsg struct {
-	Server pgui.Server
+	Server tablespace.Server
 	Err    error
 }
 
 type ServerTickMsg struct{}
 
 type DatabasesLoadedMsg struct {
-	Databases []pgui.Database
+	Databases []tablespace.Database
 	Err       error
 }
 
 type BackendsLoadedMsg struct {
-	Backends []pgui.Backend
+	Backends []tablespace.Backend
 	Err      error
 }
 
@@ -36,19 +36,19 @@ type DatabaseOpenedMsg struct {
 
 type TablesLoadedMsg struct {
 	Database string
-	Tables   []pgui.Table
+	Tables   []tablespace.Table
 	Err      error
 }
 
 type IndexesLoadedMsg struct {
 	Database string
-	Indexes  []pgui.Index
+	Indexes  []tablespace.Index
 	Err      error
 }
 
 type TableLoadedMsg struct {
 	OID   uint32
-	Table pgui.Table
+	Table tablespace.Table
 	Err   error
 }
 
@@ -56,10 +56,10 @@ type TableLoadedMsg struct {
 // rows are paged.
 type SchemaLoadedMsg struct {
 	OID         uint32
-	Columns     []pgui.Column
-	Indexes     []pgui.Index
-	Constraints []pgui.Constraint
-	Paging      pgui.Paging
+	Columns     []tablespace.Column
+	Indexes     []tablespace.Index
+	Constraints []tablespace.Constraint
+	Paging      tablespace.Paging
 	Err         error
 }
 
@@ -69,7 +69,7 @@ type RowsLoadedMsg struct {
 	OID   uint32
 	Gen   uint64
 	After []string
-	Page  pgui.Page
+	Page  tablespace.Page
 	Err   error
 }
 
@@ -97,19 +97,19 @@ type BackendsSignalledMsg struct {
 }
 
 type TableTruncatedMsg struct {
-	Table pgui.Table
+	Table tablespace.Table
 	Err   error
 }
 
 type TableDroppedMsg struct {
-	Table pgui.Table
+	Table tablespace.Table
 	Err   error
 }
 
 // QueryRanMsg answers running the editor's query.
 type QueryRanMsg struct {
 	Gen    uint64
-	Result pgui.QueryResult
+	Result tablespace.QueryResult
 	Err    error
 }
 

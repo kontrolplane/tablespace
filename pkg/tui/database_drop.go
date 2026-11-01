@@ -6,8 +6,8 @@ import (
 	"charm.land/bubbles/v2/key"
 	tea "charm.land/bubbletea/v2"
 
-	"github.com/kontrolplane/pgui/pkg/tui/commands"
-	"github.com/kontrolplane/pgui/pkg/tui/styles"
+	"github.com/kontrolplane/tablespace/pkg/tui/commands"
+	"github.com/kontrolplane/tablespace/pkg/tui/styles"
 )
 
 type databaseDropState struct {

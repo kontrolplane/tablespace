@@ -18,7 +18,7 @@ builds:
       - -X main.version={{.Version}}
       - -X main.commit={{.Commit}}
       - -X main.date={{.Date}}
-    binary: pgui
+    binary: tablespace
 
 archives:
   - formats: [tar.gz]
@@ -41,15 +41,15 @@ snapshot:
   version_template: "{{ incpatch .Version }}-next"
 
 homebrew_casks:
-  - name: pgui
+  - name: tablespace
     binaries:
-      - pgui
+      - tablespace
     repository:
       owner: kontrolplane
       name: homebrew-tap
       token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
     directory: Casks
-    homepage: https://kontrolplane.dev/projects/#pgui
+    homepage: https://kontrolplane.dev/projects/#tablespace
     description: "A terminal user interface for PostgreSQL."
     license: MIT
     commit_author:
@@ -60,7 +60,7 @@ homebrew_casks:
       post:
         install_steps: |
           on_macos do
-            run "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "{{ .StagedPath }}/pgui"]
+            run "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "{{ .StagedPath }}/tablespace"]
           end
 
 changelog:
@@ -76,7 +76,7 @@ changelog:
 release:
   github:
     owner: kontrolplane
-    name: pgui
+    name: tablespace
   draft: false
   prerelease: auto
   name_template: "{{.ProjectName}} v{{.Version}}"

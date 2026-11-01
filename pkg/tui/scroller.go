@@ -6,7 +6,7 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 
-	"github.com/kontrolplane/pgui/pkg/tui/styles"
+	"github.com/kontrolplane/tablespace/pkg/tui/styles"
 )
 
 // scroller shows a window of rendered lines, moved with the arrow keys, page keys and g/G.

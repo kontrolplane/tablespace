@@ -10,7 +10,7 @@ import (
 	"charm.land/huh/v2"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/kontrolplane/pgui/pkg/pgui"
+	"github.com/kontrolplane/tablespace/pkg/tablespace"
 )
 
 // openTable opens the database the model is connected to, then the table by its name.
@@ -33,7 +33,7 @@ func openTable(t *testing.T, m model, name string) model {
 
 func cursorToDatabase(t *testing.T, m model, name string) model {
 	t.Helper()
-	i := slices.IndexFunc(m.getFilteredDatabases(), func(d pgui.Database) bool { return d.Name == name })
+	i := slices.IndexFunc(m.getFilteredDatabases(), func(d tablespace.Database) bool { return d.Name == name })
 	if i < 0 {
 		t.Fatalf("no database %s listed", name)
 	}
@@ -181,7 +181,7 @@ func TestFlowTruncateAndDropTable(t *testing.T) {
 	if m.page != databaseDetails || !strings.Contains(m.statusMsg, "dropped table shop.events") {
 		t.Fatalf("expected the table dropped, got page %v status %q error %q", m.page, m.statusMsg, m.error)
 	}
-	if slices.ContainsFunc(m.state.databaseDetails.tables, func(t pgui.Table) bool { return t.Name == "events" }) {
+	if slices.ContainsFunc(m.state.databaseDetails.tables, func(t tablespace.Table) bool { return t.Name == "events" }) {
 		t.Error("expected the table gone from the list")
 	}
 	var exists bool
@@ -369,7 +369,7 @@ func TestFlowCreateOpenAndDropDatabase(t *testing.T) {
 	if !strings.Contains(m.statusMsg, "dropped database "+name) {
 		t.Fatalf("expected the database dropped, got status %q error %q", m.statusMsg, m.error)
 	}
-	if slices.ContainsFunc(m.state.databaseOverview.databases, func(d pgui.Database) bool { return d.Name == name }) {
+	if slices.ContainsFunc(m.state.databaseOverview.databases, func(d tablespace.Database) bool { return d.Name == name }) {
 		t.Error("expected the database gone from the list")
 	}
 }

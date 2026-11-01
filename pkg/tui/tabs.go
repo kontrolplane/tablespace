@@ -3,7 +3,7 @@ package tui
 import (
 	"github.com/charmbracelet/x/ansi"
 
-	"github.com/kontrolplane/pgui/pkg/tui/styles"
+	"github.com/kontrolplane/tablespace/pkg/tui/styles"
 )
 
 // tabItem is a tab of a tab bar. A tab whose items are not loaded yet goes without a count.

@@ -1,4 +1,4 @@
-module github.com/kontrolplane/pgui
+module github.com/kontrolplane/tablespace
 
 go 1.26.0
 

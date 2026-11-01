@@ -42,7 +42,7 @@ create table shop.order_lines (
   primary key (order_id, line)
 );
 
--- No primary key: the rows are paged by ctid and cannot be deleted from pgui.
+-- No primary key: the rows are paged by ctid and cannot be deleted from tablespace.
 create table shop.events (
   kind text not null,
   payload jsonb,

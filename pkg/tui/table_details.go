@@ -14,10 +14,10 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 
-	"github.com/kontrolplane/pgui/pkg/pgui"
-	"github.com/kontrolplane/pgui/pkg/tui/commands"
-	"github.com/kontrolplane/pgui/pkg/tui/messages"
-	"github.com/kontrolplane/pgui/pkg/tui/styles"
+	"github.com/kontrolplane/tablespace/pkg/tablespace"
+	"github.com/kontrolplane/tablespace/pkg/tui/commands"
+	"github.com/kontrolplane/tablespace/pkg/tui/messages"
+	"github.com/kontrolplane/tablespace/pkg/tui/styles"
 )
 
 type tableTab int
@@ -35,26 +35,26 @@ func (t tableTab) String() string {
 }
 
 type tableDetailsState struct {
-	table        pgui.Table
+	table        tablespace.Table
 	attributes   string
 	tab          tableTab
 	schemaLoaded bool
 
-	columns        []pgui.Column
+	columns        []tablespace.Column
 	columnsTable   dataTable
 	selectedColumn int
 
-	indexes       []pgui.Index
+	indexes       []tablespace.Index
 	indexesTable  dataTable
 	selectedIndex int
 
-	constraints        []pgui.Constraint
+	constraints        []tablespace.Constraint
 	constraintsTable   dataTable
 	selectedConstraint int
 
-	paging       pgui.Paging
-	fields       []pgui.Field
-	rows         []pgui.Row
+	paging       tablespace.Paging
+	fields       []tablespace.Field
+	rows         []tablespace.Row
 	rowsLoaded   bool
 	rowsTable    dataTable
 	selectedRow  int
@@ -142,13 +142,13 @@ func attributeColumn(width int, rows []attribute) string {
 	return lipgloss.NewStyle().Width(width).Render(strings.Join(lines, "\n"))
 }
 
-func renderTableAttributes(t pgui.Table, p pgui.Paging, schemaLoaded bool) string {
+func renderTableAttributes(t tablespace.Table, p tablespace.Paging, schemaLoaded bool) string {
 	kind := cell{styles.S(t.Kind, styles.ToneBody), sep(), styles.S("owner ", styles.ToneFaint), styles.S(t.Owner, styles.ToneBody)}
 	if t.Partition {
 		kind = append(cell{styles.S("partition of a ", styles.ToneFaint)}, kind...)
 	}
 	rows := dash()
-	if t.Kind != pgui.KindView {
+	if t.Kind != tablespace.KindView {
 		rows = append(cell{styles.S("estimate ", styles.ToneFaint)}, estimate(t)...)
 	}
 	if t.Stats() {
@@ -161,7 +161,7 @@ func renderTableAttributes(t pgui.Table, p pgui.Paging, schemaLoaded bool) strin
 			styles.S("table ", styles.ToneFaint), styles.S(formatBytes(t.TableBytes), styles.ToneBody), sep(),
 			styles.S("indexes ", styles.ToneFaint), styles.S(formatBytes(t.IndexBytes), styles.ToneBody)}
 	}
-	if t.Kind == pgui.KindPartitioned {
+	if t.Kind == tablespace.KindPartitioned {
 		size = append(size, styles.S("  in its partitions", styles.ToneFaint))
 	}
 	stat := func(c cell) cell {
@@ -171,7 +171,7 @@ func renderTableAttributes(t pgui.Table, p pgui.Paging, schemaLoaded bool) strin
 		return c
 	}
 	analyzed := dash()
-	if t.Kind != pgui.KindView {
+	if t.Kind != tablespace.KindView {
 		analyzed = ago(t.LastAnalyze)
 	}
 	order := text("…", styles.ToneFaint)
@@ -200,7 +200,7 @@ func renderTableAttributes(t pgui.Table, p pgui.Paging, schemaLoaded bool) strin
 }
 
 // rowKey is the key a row is selected by.
-func rowKey(r pgui.Row) string { return strings.Join(r.Key, "\x00") }
+func rowKey(r tablespace.Row) string { return strings.Join(r.Key, "\x00") }
 
 // The type oids that are drawn differently.
 const (
@@ -237,7 +237,7 @@ func cellText(s string) string {
 }
 
 // valueCell renders a value in a table: null and the empty string recede, JSON is tinted.
-func valueCell(v pgui.Value, oid uint32) cell {
+func valueCell(v tablespace.Value, oid uint32) cell {
 	switch {
 	case v.Null:
 		return text("null", styles.ToneFaint)
@@ -258,7 +258,7 @@ func valueCell(v pgui.Value, oid uint32) cell {
 
 // fieldWidth is the width a column of rows gets: what its title and the longest of its values
 // need, within bounds.
-func fieldWidth(i int, f pgui.Field, rows []pgui.Row) int {
+func fieldWidth(i int, f tablespace.Field, rows []tablespace.Row) int {
 	w := textWidth(f.Name)
 	for _, r := range rows {
 		if i < len(r.Values) {
@@ -268,7 +268,7 @@ func fieldWidth(i int, f pgui.Field, rows []pgui.Row) int {
 	return max(4, min(40, w))
 }
 
-func rowMatches(r pgui.Row, filter string) bool {
+func rowMatches(r tablespace.Row, filter string) bool {
 	filter = strings.ToLower(filter)
 	for _, v := range r.Values {
 		if !v.Null && strings.Contains(strings.ToLower(v.Text), filter) {
@@ -278,15 +278,15 @@ func rowMatches(r pgui.Row, filter string) bool {
 	return false
 }
 
-func (m model) getFilteredRows() []pgui.Row {
+func (m model) getFilteredRows() []tablespace.Row {
 	td := m.state.tableDetails
 	return filterBy(td.rows, td.filterText, rowMatches)
 }
 
-func (m model) currentRow() (pgui.Row, bool) {
+func (m model) currentRow() (tablespace.Row, bool) {
 	rows := m.getFilteredRows()
 	if len(rows) == 0 {
-		return pgui.Row{}, false
+		return tablespace.Row{}, false
 	}
 	return rows[m.state.tableDetails.selectedRow], true
 }
@@ -352,16 +352,16 @@ func (td *tableDetailsState) visibleColumns() (first, last int) {
 	return td.colOffset, td.colOffset + shown - 1
 }
 
-func (m model) getFilteredColumns() []pgui.Column {
+func (m model) getFilteredColumns() []tablespace.Column {
 	td := m.state.tableDetails
-	return filterBy(td.columns, td.filterText, func(c pgui.Column, f string) bool {
+	return filterBy(td.columns, td.filterText, func(c tablespace.Column, f string) bool {
 		return strings.Contains(strings.ToLower(c.Name+" "+c.Type+" "+c.Comment), strings.ToLower(f))
 	})
 }
 
-func (m model) getFilteredConstraints() []pgui.Constraint {
+func (m model) getFilteredConstraints() []tablespace.Constraint {
 	td := m.state.tableDetails
-	return filterBy(td.constraints, td.filterText, func(c pgui.Constraint, f string) bool {
+	return filterBy(td.constraints, td.filterText, func(c tablespace.Constraint, f string) bool {
 		return strings.Contains(strings.ToLower(c.Name+" "+c.Kind+" "+c.Definition), strings.ToLower(f))
 	})
 }
@@ -455,7 +455,7 @@ func (m model) updateTableTabs() model {
 	return m.updateRowsTable().updateColumnsTable().updateTableIndexesTable().updateConstraintsTable()
 }
 
-func (m model) TableDetailsSwitchPage(t pgui.Table) (model, tea.Cmd) {
+func (m model) TableDetailsSwitchPage(t tablespace.Table) (model, tea.Cmd) {
 	m.error = ""
 	m = m.SwitchPage(tableDetails)
 	m.loading, m.loadingMsg = true, "loading "+t.DisplayName()+"…"
@@ -524,10 +524,10 @@ func (m model) focusTableTab() model {
 }
 
 // tableGone leaves a table that was dropped elsewhere.
-func (m model) tableGone(t pgui.Table) (model, tea.Cmd) {
+func (m model) tableGone(t tablespace.Table) (model, tea.Cmd) {
 	m.loading = false
 	d := &m.state.databaseDetails
-	d.tables = deleteNames(d.tables, []uint32{t.OID}, func(t pgui.Table) uint32 { return t.OID })
+	d.tables = deleteNames(d.tables, []uint32{t.OID}, func(t tablespace.Table) uint32 { return t.OID })
 	m = m.updateTablesTable()
 	m, cmd := m.DatabaseDetailsGoBack()
 	return m.withStatus(cmd, t.Kind+" "+t.DisplayName()+" no longer exists", styles.ToneDanger)
@@ -548,7 +548,7 @@ func (m model) applyTable(msg messages.TableLoadedMsg) (model, tea.Cmd) {
 		return m, nil
 	}
 	switch {
-	case errors.Is(msg.Err, pgui.ErrTableNotFound) && !m.busy:
+	case errors.Is(msg.Err, tablespace.ErrTableNotFound) && !m.busy:
 		return m.tableGone(td.table)
 	case msg.Err != nil:
 		if m.page != tableDetails {
@@ -606,7 +606,7 @@ func (m model) applyRows(msg messages.RowsLoadedMsg) (model, tea.Cmd) {
 		prev, ok := m.currentRow()
 		td.rows = page.Rows
 		if !td.following() && ok {
-			td.selectedRow = follow(m.getFilteredRows(), td.selectedRow, func(r pgui.Row) bool { return rowKey(r) == rowKey(prev) })
+			td.selectedRow = follow(m.getFilteredRows(), td.selectedRow, func(r tablespace.Row) bool { return rowKey(r) == rowKey(prev) })
 		}
 		prune(td.selectedRows, td.rows, rowKey)
 	}
@@ -639,7 +639,7 @@ func (m model) rowsFootMeta() []string {
 }
 
 // rowJSON writes a row out as a JSON object, its columns in order. JSON values stay JSON.
-func rowJSON(fields []pgui.Field, r pgui.Row) string {
+func rowJSON(fields []tablespace.Field, r tablespace.Row) string {
 	var b strings.Builder
 	b.WriteString("{")
 	for i, f := range fields {

@@ -18,8 +18,8 @@ import (
 )
 
 const (
-	user     = "pgui"
-	password = "pgui"
+	user     = "tablespace"
+	password = "tablespace"
 )
 
 var (
@@ -33,7 +33,7 @@ func Main(m *testing.M) {
 }
 
 func run(m *testing.M) int {
-	dir, err := os.MkdirTemp("", "pgui-test-")
+	dir, err := os.MkdirTemp("", "tablespace-test-")
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return 1

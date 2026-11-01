@@ -3,7 +3,7 @@ package tui
 import (
 	"strings"
 
-	"github.com/kontrolplane/pgui/pkg/tui/styles"
+	"github.com/kontrolplane/tablespace/pkg/tui/styles"
 )
 
 // messageKeys are the fields a message is usually written in, which carry the text ink.

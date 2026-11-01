@@ -1,14 +1,14 @@
 <p align="center">
   <h1 align="center">
     <a href="https://kontrolplane.dev">
-      <img width="1500" alt="kontrolplane pgui" src="./assets/kontrolplane-header.svg">
+      <img width="1500" alt="kontrolplane tablespace" src="./assets/kontrolplane-header.svg">
     </a>
   </h1>
 </p>
 
-`pgui` is a terminal user interface (tui) application for managing `PostgreSQL`. It gives you a fast way to inspect and manage databases, tables, rows and sessions directly from the terminal. Page through the newest rows of a table, see which session blocks which, cancel a runaway query, run sql in an editor with its own session and drop or truncate what you no longer need.
+`tablespace` is a terminal user interface (tui) application for managing `PostgreSQL`. It gives you a fast way to inspect and manage databases, tables, rows and sessions directly from the terminal. Page through the newest rows of a table, see which session blocks which, cancel a runaway query, run sql in an editor with its own session and drop or truncate what you no longer need.
 
-<img width="1500" alt="pgui demo" src="./assets/cassette.gif">
+<img width="1500" alt="tablespace demo" src="./assets/cassette.gif">
 
 ## views
 
@@ -67,7 +67,7 @@ Rows are deleted by their primary key, in one transaction. A table without one r
 
 The editor runs on a session of its own, kept open, so a `begin` in one run is still open in the next, and the editor says a transaction is open. It runs what you type as `psql` does with several statements on a line: each one's tag is listed, the rows of the last statement that returned rows are shown, up to 1,000 of them. `esc` while it runs cancels the query on the server.
 
-Dropping a database or table, or truncating one, asks to type its name first. Pressing `esc` on a form with input asks again before discarding it. The database `pgui` is connected to cannot be dropped, open another one first.
+Dropping a database or table, or truncating one, asks to type its name first. Pressing `esc` on a form with input asks again before discarding it. The database you are connected to cannot be dropped, open another one first.
 
 While the server is unreachable, the data on screen stays and the frame says so. Changes are refused rather than queued, so nothing is done twice once it is back.
 
@@ -76,26 +76,26 @@ While the server is unreachable, the data on screen stays and the frame says so.
 With [go](https://go.dev/) 1.26+ installed:
 
 ```bash
-go install github.com/kontrolplane/pgui@latest
+go install github.com/kontrolplane/tablespace@latest
 ```
 
 With [homebrew](https://brew.sh/) on macos or linux:
 
 ```bash
-brew install kontrolplane/tap/pgui
+brew install kontrolplane/tap/tablespace
 ```
 
-Prebuilt binaries for linux, macos and windows are attached to the [GitHub releases](https://github.com/kontrolplane/pgui/releases), together with a `checksums.txt` to verify the download.
+Prebuilt binaries for linux, macos and windows are attached to the [GitHub releases](https://github.com/kontrolplane/tablespace/releases), together with a `checksums.txt` to verify the download.
 
-A container image for linux/amd64 and linux/arm64 is published to `ghcr.io/kontrolplane/pgui`, tagged with the release version and `latest` for releases, and `main` for the latest commit on main:
+A container image for linux/amd64 and linux/arm64 is published to `ghcr.io/kontrolplane/tablespace`, tagged with the release version and `latest` for releases, and `main` for the latest commit on main:
 
 ```bash
-docker run --rm -it --network host -e PGPASSWORD ghcr.io/kontrolplane/pgui:latest --host 127.0.0.1 --user postgres
+docker run --rm -it --network host -e PGPASSWORD ghcr.io/kontrolplane/tablespace:latest --host 127.0.0.1 --user postgres
 ```
 
 ## connecting
 
-`pgui` connects the same way as [psql](https://www.postgresql.org/docs/current/app-psql.html). The `PG*` environment variables, the [password file](https://www.postgresql.org/docs/current/libpq-pgpass.html) and the [connection service file](https://www.postgresql.org/docs/current/libpq-pgservice.html) are read, and a flag takes the place of its environment variable. A connection string or url passed as `--dbname` takes precedence over all of them, as it does with `psql`.
+`tablespace` connects the same way as [psql](https://www.postgresql.org/docs/current/app-psql.html). The `PG*` environment variables, the [password file](https://www.postgresql.org/docs/current/libpq-pgpass.html) and the [connection service file](https://www.postgresql.org/docs/current/libpq-pgservice.html) are read, and a flag takes the place of its environment variable. A connection string or url passed as `--dbname` takes precedence over all of them, as it does with `psql`.
 
 | flag                 | environment variable | description                                                    |
 | -------------------- | -------------------- | -------------------------------------------------------------- |
@@ -112,20 +112,20 @@ docker run --rm -it --network host -e PGPASSWORD ghcr.io/kontrolplane/pgui:lates
 | `--version`          |                      | print the version and exit                                     |
 | `--help`, `-h`       |                      | print the flags and exit                                       |
 
-There is no password flag, a password on the command line is visible to other users in the process list. When the server asks for a password none was given for, `pgui` asks for it on the terminal, like `psql`. `-h` prints the help, as it does in [tsui](https://github.com/kontrolplane/tsui), so `--host` has no shorthand.
+There is no password flag, a password on the command line is visible to other users in the process list. When the server asks for a password none was given for, `tablespace` asks for it on the terminal, like `psql`. `-h` prints the help, as it does in [tsui](https://github.com/kontrolplane/tsui), so `--host` has no shorthand.
 
 `--read-only` is a guard against mistakes, not a permission: the editor can still turn it off for its own session with `set default_transaction_read_only = off`. Connect as a role that may only read when it has to be enforced.
 
 ```bash
-pgui --dbname shop
-pgui --host db.internal --user app --dbname shop --sslmode verify-full
-pgui --dbname "postgres://app@db.internal:5432/shop?sslmode=require"
-pgui --service production --read-only
+tablespace --dbname shop
+tablespace --host db.internal --user app --dbname shop --sslmode verify-full
+tablespace --dbname "postgres://app@db.internal:5432/shop?sslmode=require"
+tablespace --service production --read-only
 ```
 
 ## development
 
-pgui uses a local PostgreSQL 18 server, running in Docker on `localhost:5432` with the user and password `postgres`.
+`tablespace` uses a local PostgreSQL 18 server, running in Docker on `localhost:5432` with the user and password `postgres`.
 
 - [docker](https://www.docker.com/)
 - [earthly](https://earthly.dev/)
@@ -162,12 +162,12 @@ To show the changes made in the repository readme, the following command can be 
 earthly +vhs
 ```
 
-### running kontrolplane/pgui locally
+### running kontrolplane/tablespace locally
 
 Start PostgreSQL, create the sample databases, build and run in one go:
 
 ```bash
-earthly +dev && PGPASSWORD=postgres ./build/kontrolplane/pgui --host localhost --user postgres --dbname shop
+earthly +dev && PGPASSWORD=postgres ./build/kontrolplane/tablespace --host localhost --user postgres --dbname shop
 ```
 
 Seeding skips databases that already exist, so this can be rerun. The files under [seed/databases](./seed/databases) hold one database each. `psql` is used to load them when it is installed, the one in the container otherwise. The data is kept in the `volume` directory, or the one `PG_VOLUME_DIR` names; remove it after `docker compose down` to start from scratch.

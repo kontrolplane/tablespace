@@ -17,12 +17,12 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/kontrolplane/pgui/pkg/client"
-	keys "github.com/kontrolplane/pgui/pkg/keys"
-	"github.com/kontrolplane/pgui/pkg/pgui"
-	"github.com/kontrolplane/pgui/pkg/tui/commands"
-	"github.com/kontrolplane/pgui/pkg/tui/messages"
-	"github.com/kontrolplane/pgui/pkg/tui/styles"
+	"github.com/kontrolplane/tablespace/pkg/client"
+	keys "github.com/kontrolplane/tablespace/pkg/keys"
+	"github.com/kontrolplane/tablespace/pkg/tablespace"
+	"github.com/kontrolplane/tablespace/pkg/tui/commands"
+	"github.com/kontrolplane/tablespace/pkg/tui/messages"
+	"github.com/kontrolplane/tablespace/pkg/tui/styles"
 )
 
 func NewModel(
@@ -36,7 +36,7 @@ func NewModel(
 	m.pool = pool
 	m.config = config
 	m.info = info
-	m.session = pgui.NewSession(config.ConnConfig)
+	m.session = tablespace.NewSession(config.ConnConfig)
 	return m
 }
 
@@ -245,7 +245,7 @@ func (m model) replacePool(pool *pgxpool.Pool, cfg *pgxpool.Config) (model, tea.
 	}
 	m.pool, m.config = pool, cfg
 	m.info = client.InfoOf(cfg, m.info.ReadOnly)
-	m.session = pgui.NewSession(cfg.ConnConfig)
+	m.session = tablespace.NewSession(cfg.ConnConfig)
 	m.serverOK, m.online = false, true
 	m.state.sqlEditor.result = nil
 	cmds = append(cmds, commands.LoadServer(m.context, pool))
@@ -373,7 +373,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		for _, name := range msg.Names {
 			delete(o.selectedDatabases, name)
 		}
-		o.databases = deleteNames(o.databases, msg.Names, func(d pgui.Database) string { return d.Name })
+		o.databases = deleteNames(o.databases, msg.Names, func(d tablespace.Database) string { return d.Name })
 		m = m.updateDatabasesTable()
 		done, failed := bulkResult("drop", "dropped", "database", m.state.databaseDrop.names, msg.Names)
 		return m.finish(model.DatabaseOverviewGoBack, done, failed, msg.Err)
@@ -413,7 +413,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m.finish(model.TableDetailsGoBack, "", "could not drop "+name, msg.Err)
 		}
 		d := &m.state.databaseDetails
-		d.tables = deleteNames(d.tables, []uint32{msg.Table.OID}, func(t pgui.Table) uint32 { return t.OID })
+		d.tables = deleteNames(d.tables, []uint32{msg.Table.OID}, func(t tablespace.Table) uint32 { return t.OID })
 		m = m.updateTablesTable()
 		return m.finish(model.DatabaseDetailsGoBack, "dropped "+name, "", nil)
 

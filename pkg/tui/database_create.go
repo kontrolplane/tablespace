@@ -9,9 +9,9 @@ import (
 	"charm.land/huh/v2"
 	"charm.land/lipgloss/v2"
 
-	"github.com/kontrolplane/pgui/pkg/pgui"
-	"github.com/kontrolplane/pgui/pkg/tui/commands"
-	"github.com/kontrolplane/pgui/pkg/tui/styles"
+	"github.com/kontrolplane/tablespace/pkg/tablespace"
+	"github.com/kontrolplane/tablespace/pkg/tui/commands"
+	"github.com/kontrolplane/tablespace/pkg/tui/styles"
 )
 
 // databaseCreateInput holds the form's values. The form writes to it through pointers, so it
@@ -130,7 +130,7 @@ func (m model) DatabaseCreateUpdate(msg tea.Msg) (model, tea.Cmd) {
 		if m, refused := m.refuseOffline("created"); refused {
 			return m.reopenDatabaseCreate(m.error)
 		}
-		cfg := pgui.DatabaseConfig{
+		cfg := tablespace.DatabaseConfig{
 			Name:     strings.TrimSpace(c.input.name),
 			Owner:    strings.TrimSpace(c.input.owner),
 			Template: strings.TrimSpace(c.input.template),

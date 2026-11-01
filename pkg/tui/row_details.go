@@ -8,17 +8,17 @@ import (
 	"charm.land/bubbles/v2/key"
 	tea "charm.land/bubbletea/v2"
 
-	"github.com/kontrolplane/pgui/pkg/pgui"
-	"github.com/kontrolplane/pgui/pkg/tui/commands"
-	"github.com/kontrolplane/pgui/pkg/tui/styles"
+	"github.com/kontrolplane/tablespace/pkg/tablespace"
+	"github.com/kontrolplane/tablespace/pkg/tui/commands"
+	"github.com/kontrolplane/tablespace/pkg/tui/styles"
 )
 
 // rowDetailsState shows one row: its fields on the left, the value of the one under the cursor
 // in full on the right. It opens from the rows of a table or from a result of the editor.
 type rowDetailsState struct {
-	fields    []pgui.Field
+	fields    []tablespace.Field
 	types     []string // the type of each field, where it is known
-	row       pgui.Row
+	row       tablespace.Row
 	key       []string // the primary key of the row, for a row of a table
 	fromQuery bool
 	index     int // the row's place in the result it came from
@@ -44,11 +44,11 @@ func (d rowDetailsState) title() string {
 }
 
 // RowDetailsSwitchPage opens a row of the open table.
-func (m model) RowDetailsSwitchPage(r pgui.Row) (model, tea.Cmd) {
+func (m model) RowDetailsSwitchPage(r tablespace.Row) (model, tea.Cmd) {
 	td := m.state.tableDetails
 	types := make([]string, len(td.fields))
 	for i, f := range td.fields {
-		if j := slices.IndexFunc(td.columns, func(c pgui.Column) bool { return c.Name == f.Name }); j >= 0 {
+		if j := slices.IndexFunc(td.columns, func(c tablespace.Column) bool { return c.Name == f.Name }); j >= 0 {
 			types[i] = td.columns[j].Type
 		}
 	}
@@ -82,7 +82,7 @@ func (m model) updateRowFieldsTable() model {
 	d := &m.state.rowDetails
 	rows := make([]tableRow, len(d.fields))
 	for i, f := range d.fields {
-		var v pgui.Value
+		var v tablespace.Value
 		if i < len(d.row.Values) {
 			v = d.row.Values[i]
 		}
@@ -105,10 +105,10 @@ func (d rowDetailsState) keyColumns(m model) []string {
 }
 
 // currentValue is the field under the cursor.
-func (d rowDetailsState) currentValue() (pgui.Field, pgui.Value, bool) {
+func (d rowDetailsState) currentValue() (tablespace.Field, tablespace.Value, bool) {
 	i := d.table.Cursor()
 	if i >= len(d.fields) || i >= len(d.row.Values) {
-		return pgui.Field{}, pgui.Value{}, false
+		return tablespace.Field{}, tablespace.Value{}, false
 	}
 	return d.fields[i], d.row.Values[i], true
 }

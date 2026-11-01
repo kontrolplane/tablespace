@@ -9,10 +9,10 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 
-	"github.com/kontrolplane/pgui/pkg/pgui"
-	"github.com/kontrolplane/pgui/pkg/tui/commands"
-	"github.com/kontrolplane/pgui/pkg/tui/messages"
-	"github.com/kontrolplane/pgui/pkg/tui/styles"
+	"github.com/kontrolplane/tablespace/pkg/tablespace"
+	"github.com/kontrolplane/tablespace/pkg/tui/commands"
+	"github.com/kontrolplane/tablespace/pkg/tui/messages"
+	"github.com/kontrolplane/tablespace/pkg/tui/styles"
 )
 
 type detailsTab int
@@ -34,12 +34,12 @@ type databaseDetailsState struct {
 	database string
 	tab      detailsTab
 
-	tables        []pgui.Table
+	tables        []tablespace.Table
 	tablesLoaded  bool
 	tablesTable   dataTable
 	selectedTable int
 
-	indexes       []pgui.Index
+	indexes       []tablespace.Index
 	indexesLoaded bool
 	indexesTable  dataTable
 	selectedIndex int
@@ -76,51 +76,51 @@ var databaseIndexColumns = []column{
 	{title: "definition", width: 30, grow: 2, drop: 1},
 }
 
-func tableMatches(t pgui.Table, filter string) bool {
+func tableMatches(t tablespace.Table, filter string) bool {
 	filter = strings.ToLower(filter)
 	return strings.Contains(strings.ToLower(t.DisplayName()), filter) ||
 		strings.Contains(strings.ToLower(t.Kind), filter) ||
 		strings.Contains(strings.ToLower(t.Comment), filter)
 }
 
-func indexMatches(i pgui.Index, filter string) bool {
+func indexMatches(i tablespace.Index, filter string) bool {
 	filter = strings.ToLower(filter)
 	return strings.Contains(strings.ToLower(i.Schema+"."+i.Table), filter) ||
 		strings.Contains(strings.ToLower(i.Name), filter) ||
 		strings.Contains(strings.ToLower(i.Definition), filter)
 }
 
-func (m model) getFilteredTables() []pgui.Table {
+func (m model) getFilteredTables() []tablespace.Table {
 	d := m.state.databaseDetails
 	return filterBy(d.tables, d.filterText, tableMatches)
 }
 
-func (m model) getFilteredIndexes() []pgui.Index {
+func (m model) getFilteredIndexes() []tablespace.Index {
 	d := m.state.databaseDetails
 	return filterBy(d.indexes, d.filterText, indexMatches)
 }
 
-func (m model) currentTable() (pgui.Table, bool) {
+func (m model) currentTable() (tablespace.Table, bool) {
 	ts := m.getFilteredTables()
 	if len(ts) == 0 {
-		return pgui.Table{}, false
+		return tablespace.Table{}, false
 	}
 	return ts[m.state.databaseDetails.selectedTable], true
 }
 
-func (m model) currentIndex() (pgui.Index, bool) {
+func (m model) currentIndex() (tablespace.Index, bool) {
 	is := m.getFilteredIndexes()
 	if len(is) == 0 {
-		return pgui.Index{}, false
+		return tablespace.Index{}, false
 	}
 	return is[m.state.databaseDetails.selectedIndex], true
 }
 
 // estimate renders the planner's row estimate, which is all that is known of a table that was
 // never counted.
-func estimate(t pgui.Table) cell {
+func estimate(t tablespace.Table) cell {
 	switch {
-	case t.Kind == pgui.KindView:
+	case t.Kind == tablespace.KindView:
 		return dash()
 	case t.Estimate < 0:
 		return text("?", styles.ToneFaint)
@@ -166,7 +166,7 @@ func (m model) updateTablesTable() model {
 				dead = text(compactCount(uint64(t.DeadRows)), styles.ToneWarning)
 			}
 		}
-		if t.Kind != pgui.KindView {
+		if t.Kind != tablespace.KindView {
 			analyzed = ago(t.LastAnalyze)
 		}
 		rows = append(rows, tableRow{
@@ -192,7 +192,7 @@ func (m model) updateTablesTable() model {
 }
 
 // indexKind renders what an index guarantees, and when it cannot be used.
-func indexKind(i pgui.Index) cell {
+func indexKind(i tablespace.Index) cell {
 	switch {
 	case !i.Valid:
 		return text("invalid", styles.ToneDanger)
@@ -205,7 +205,7 @@ func indexKind(i pgui.Index) cell {
 }
 
 // indexScans renders how often an index was used, warm when it never was.
-func indexScans(i pgui.Index) cell {
+func indexScans(i tablespace.Index) cell {
 	if i.Scans == 0 && !i.Primary && !i.Unique {
 		return text("unused", styles.ToneWarning)
 	}
@@ -292,7 +292,7 @@ func (m model) applyTables(msg messages.TablesLoadedMsg) (model, tea.Cmd) {
 	prev, ok := m.currentTable()
 	d.tables, d.tablesLoaded = msg.Tables, true
 	if ok {
-		d.selectedTable = follow(m.getFilteredTables(), d.selectedTable, func(t pgui.Table) bool { return t.OID == prev.OID })
+		d.selectedTable = follow(m.getFilteredTables(), d.selectedTable, func(t tablespace.Table) bool { return t.OID == prev.OID })
 	}
 	m = m.updateTablesTable()
 	if !onPage {
@@ -322,7 +322,7 @@ func (m model) applyIndexes(msg messages.IndexesLoadedMsg) (model, tea.Cmd) {
 	prev, ok := m.currentIndex()
 	d.indexes, d.indexesLoaded = msg.Indexes, true
 	if ok {
-		d.selectedIndex = follow(m.getFilteredIndexes(), d.selectedIndex, func(i pgui.Index) bool { return i.Name == prev.Name && i.Schema == prev.Schema })
+		d.selectedIndex = follow(m.getFilteredIndexes(), d.selectedIndex, func(i tablespace.Index) bool { return i.Name == prev.Name && i.Schema == prev.Schema })
 	}
 	m = m.updateDatabaseIndexesTable()
 	if !onPage {

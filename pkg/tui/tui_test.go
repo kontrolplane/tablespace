@@ -15,16 +15,16 @@ import (
 	"github.com/charmbracelet/x/ansi"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/kontrolplane/pgui/internal/pgtest"
-	"github.com/kontrolplane/pgui/pkg/client"
-	"github.com/kontrolplane/pgui/pkg/pgui"
-	"github.com/kontrolplane/pgui/pkg/tui/messages"
+	"github.com/kontrolplane/tablespace/internal/pgtest"
+	"github.com/kontrolplane/tablespace/pkg/client"
+	"github.com/kontrolplane/tablespace/pkg/tablespace"
+	"github.com/kontrolplane/tablespace/pkg/tui/messages"
 )
 
 func TestMain(m *testing.M) { pgtest.Main(m) }
 
 func newTestModel() model {
-	m := newModel("test", "pgui")
+	m := newModel("test", "tablespace")
 	m.width = 160
 	m.height = 50
 	m.loading = false
@@ -171,11 +171,11 @@ func liveModel(t *testing.T) (model, *pgxpool.Pool) {
 	t.Helper()
 	pool, name := pgtest.Database(t, seed)
 	cfg := pgtest.Config(t, name)
-	m := newModel("test", "pgui")
+	m := newModel("test", "tablespace")
 	m.width, m.height = 160, 50
 	m.pool, m.config = pool, cfg
 	m.info = client.InfoOf(cfg, false)
-	m.session = pgui.NewSession(cfg.ConnConfig)
+	m.session = tablespace.NewSession(cfg.ConnConfig)
 	t.Cleanup(m.session.Close)
 	m = drain(t, m, m.Init())
 	return m, pool
@@ -184,7 +184,7 @@ func liveModel(t *testing.T) (model, *pgxpool.Pool) {
 func TestDatabasesLoaded(t *testing.T) {
 	m := newTestModel()
 	m.loading = true
-	m, cmd := update(t, m, messages.DatabasesLoadedMsg{Databases: []pgui.Database{{Name: "postgres", Owner: "postgres", SizeKnown: true, Size: 8 << 20}, {Name: "shop", Owner: "app"}}})
+	m, cmd := update(t, m, messages.DatabasesLoadedMsg{Databases: []tablespace.Database{{Name: "postgres", Owner: "postgres", SizeKnown: true, Size: 8 << 20}, {Name: "shop", Owner: "app"}}})
 	if m.loading || len(m.state.databaseOverview.databasesTable.Rows()) != 2 {
 		t.Fatalf("expected the databases listed, got loading %v rows %d", m.loading, len(m.state.databaseOverview.databasesTable.Rows()))
 	}
@@ -207,7 +207,7 @@ func TestLoadErrorRaisesDialogOnce(t *testing.T) {
 		t.Error("expected any key to dismiss the error without quitting")
 	}
 	// With the databases on screen a failed refresh goes to the footer.
-	m, _ = update(t, m, messages.DatabasesLoadedMsg{Databases: []pgui.Database{{Name: "a"}}}, messages.DatabasesLoadedMsg{Err: errors.New("again")})
+	m, _ = update(t, m, messages.DatabasesLoadedMsg{Databases: []tablespace.Database{{Name: "a"}}}, messages.DatabasesLoadedMsg{Err: errors.New("again")})
 	if m.error != "" || !strings.Contains(m.statusMsg, "again") {
 		t.Errorf("expected the refresh error in the footer, got dialog %q status %q", m.error, m.statusMsg)
 	}
@@ -215,7 +215,7 @@ func TestLoadErrorRaisesDialogOnce(t *testing.T) {
 
 func TestEscNeverQuits(t *testing.T) {
 	m := newTestModel()
-	m, _ = update(t, m, messages.DatabasesLoadedMsg{Databases: []pgui.Database{{Name: "a"}}})
+	m, _ = update(t, m, messages.DatabasesLoadedMsg{Databases: []tablespace.Database{{Name: "a"}}})
 	if _, cmd := update(t, m, press("esc")); cmd != nil {
 		if _, ok := cmd().(tea.QuitMsg); ok {
 			t.Error("expected esc not to quit")
@@ -239,16 +239,16 @@ func TestErrorTextOfServerErrors(t *testing.T) {
 
 func TestValueCell(t *testing.T) {
 	tests := []struct {
-		v    pgui.Value
+		v    tablespace.Value
 		oid  uint32
 		want string
 	}{
-		{pgui.Value{Null: true}, 25, "null"},
-		{pgui.Value{}, 25, `""`},
-		{pgui.Value{Text: "t"}, oidBool, "true"},
-		{pgui.Value{Text: "a\nb\tc"}, 25, "a b c"},
-		{pgui.Value{Text: "\x1b[31mred"}, 25, `\x1b[31mred`},
-		{pgui.Value{Text: `{"a": 1}`}, oidJSONB, `{"a": 1}`},
+		{tablespace.Value{Null: true}, 25, "null"},
+		{tablespace.Value{}, 25, `""`},
+		{tablespace.Value{Text: "t"}, oidBool, "true"},
+		{tablespace.Value{Text: "a\nb\tc"}, 25, "a b c"},
+		{tablespace.Value{Text: "\x1b[31mred"}, 25, `\x1b[31mred`},
+		{tablespace.Value{Text: `{"a": 1}`}, oidJSONB, `{"a": 1}`},
 	}
 	for _, tt := range tests {
 		var got string
@@ -262,8 +262,8 @@ func TestValueCell(t *testing.T) {
 }
 
 func TestRowJSON(t *testing.T) {
-	fields := []pgui.Field{{Name: "id", Type: 20}, {Name: "meta", Type: oidJSONB}, {Name: "note", Type: 25}}
-	row := pgui.Row{Values: []pgui.Value{{Text: "1"}, {Text: `{"a": [1]}`}, {Null: true}}}
+	fields := []tablespace.Field{{Name: "id", Type: 20}, {Name: "meta", Type: oidJSONB}, {Name: "note", Type: 25}}
+	row := tablespace.Row{Values: []tablespace.Value{{Text: "1"}, {Text: `{"a": [1]}`}, {Null: true}}}
 	if got := rowJSON(fields, row); got != `{"id": "1", "meta": {"a": [1]}, "note": null}` {
 		t.Errorf("unexpected %s", got)
 	}
@@ -279,7 +279,7 @@ func hintKeys(m model) []string {
 
 // Every page offers the same keys in the same order, and leaves out the ones it would refuse.
 func TestShortHelpIsConsistent(t *testing.T) {
-	m, _ := update(t, newTestModel(), messages.DatabasesLoadedMsg{Databases: []pgui.Database{{Name: "shop"}}})
+	m, _ := update(t, newTestModel(), messages.DatabasesLoadedMsg{Databases: []tablespace.Database{{Name: "shop"}}})
 	keys := hintKeys(m)
 	if keys[0] != "enter open" || keys[2] != "tab activity" || keys[3] != "/ filter" || keys[len(keys)-2] != "? help" || keys[len(keys)-1] != "q quit" {
 		t.Errorf("unexpected order %v", keys)
@@ -291,7 +291,7 @@ func TestShortHelpIsConsistent(t *testing.T) {
 		}
 	}
 
-	view := pgui.Table{OID: 1, Schema: "s", Name: "v", Kind: pgui.KindView}
+	view := tablespace.Table{OID: 1, Schema: "s", Name: "v", Kind: tablespace.KindView}
 	m, _ = newTestModel().TableDetailsSwitchPage(view)
 	m, _ = update(t, m, messages.SchemaLoadedMsg{OID: 1})
 	for _, k := range hintKeys(m) {

@@ -16,14 +16,14 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"golang.org/x/term"
 
-	"github.com/kontrolplane/pgui/pkg/client"
-	tui "github.com/kontrolplane/pgui/pkg/tui"
-	"github.com/kontrolplane/pgui/pkg/tui/styles"
+	"github.com/kontrolplane/tablespace/pkg/client"
+	tui "github.com/kontrolplane/tablespace/pkg/tui"
+	"github.com/kontrolplane/tablespace/pkg/tui/styles"
 )
 
 var (
 	projectName = "kontrolplane"
-	programName = "pgui"
+	programName = "tablespace"
 )
 
 func fail(format string, args ...any) {

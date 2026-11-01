@@ -12,11 +12,11 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 
-	"github.com/kontrolplane/pgui/pkg/client"
-	"github.com/kontrolplane/pgui/pkg/pgui"
-	"github.com/kontrolplane/pgui/pkg/tui/commands"
-	"github.com/kontrolplane/pgui/pkg/tui/messages"
-	"github.com/kontrolplane/pgui/pkg/tui/styles"
+	"github.com/kontrolplane/tablespace/pkg/client"
+	"github.com/kontrolplane/tablespace/pkg/tablespace"
+	"github.com/kontrolplane/tablespace/pkg/tui/commands"
+	"github.com/kontrolplane/tablespace/pkg/tui/messages"
+	"github.com/kontrolplane/tablespace/pkg/tui/styles"
 )
 
 type overviewTab int
@@ -37,14 +37,14 @@ func (t overviewTab) String() string {
 type databaseOverviewState struct {
 	tab overviewTab
 
-	databases         []pgui.Database
+	databases         []tablespace.Database
 	databasesLoaded   bool
 	databasesTable    dataTable
 	selectedDatabase  int
 	selectedDatabases map[string]bool // database names selected for bulk operations
 	cursorTo          string          // the database the cursor goes to once it is listed
 
-	backends         []pgui.Backend
+	backends         []tablespace.Backend
 	backendsLoaded   bool
 	backendsTable    dataTable
 	selectedBackend  int
@@ -85,19 +85,19 @@ var backendColumns = []column{
 	{title: "query", width: 30, grow: 1, min: 16},
 }
 
-// appName is the application name pgui connects with, which tells its own sessions apart.
+// appName is the application name the program connects with, which tells its own sessions apart.
 func (m model) appName() string {
 	return m.projectName + "/" + m.programName
 }
 
-func databaseMatches(d pgui.Database, filter string) bool {
+func databaseMatches(d tablespace.Database, filter string) bool {
 	filter = strings.ToLower(filter)
 	return strings.Contains(strings.ToLower(d.Name), filter) ||
 		strings.Contains(strings.ToLower(d.Owner), filter) ||
 		strings.Contains(strings.ToLower(d.Comment), filter)
 }
 
-func backendMatches(b pgui.Backend, filter string) bool {
+func backendMatches(b tablespace.Backend, filter string) bool {
 	filter = strings.ToLower(filter)
 	if strconv.Itoa(b.PID) == filter {
 		return true
@@ -110,28 +110,28 @@ func backendMatches(b pgui.Backend, filter string) bool {
 	return false
 }
 
-func (m model) getFilteredDatabases() []pgui.Database {
+func (m model) getFilteredDatabases() []tablespace.Database {
 	o := m.state.databaseOverview
 	return filterBy(o.databases, o.filterText, databaseMatches)
 }
 
-func (m model) getFilteredBackends() []pgui.Backend {
+func (m model) getFilteredBackends() []tablespace.Backend {
 	o := m.state.databaseOverview
 	return filterBy(o.backends, o.filterText, backendMatches)
 }
 
-func (m model) currentDatabase() (pgui.Database, bool) {
+func (m model) currentDatabase() (tablespace.Database, bool) {
 	dbs := m.getFilteredDatabases()
 	if len(dbs) == 0 {
-		return pgui.Database{}, false
+		return tablespace.Database{}, false
 	}
 	return dbs[m.state.databaseOverview.selectedDatabase], true
 }
 
-func (m model) currentBackend() (pgui.Backend, bool) {
+func (m model) currentBackend() (tablespace.Backend, bool) {
 	bs := m.getFilteredBackends()
 	if len(bs) == 0 {
-		return pgui.Backend{}, false
+		return tablespace.Backend{}, false
 	}
 	return bs[m.state.databaseOverview.selectedBackend], true
 }
@@ -174,7 +174,7 @@ func (m model) updateDatabasesTable() model {
 
 // backendState renders the state of a backend, lit while it works and warm while a transaction
 // sits idle in it.
-func backendState(b pgui.Backend) cell {
+func backendState(b tablespace.Backend) cell {
 	switch {
 	case len(b.BlockedBy) > 0:
 		return cell{styles.S("● ", styles.ToneDanger), styles.S("blocked", styles.ToneDanger)}
@@ -190,7 +190,7 @@ func backendState(b pgui.Backend) cell {
 
 // backendSince is when what the backend does began: its query while it runs one, its state
 // otherwise.
-func backendSince(b pgui.Backend) time.Time {
+func backendSince(b tablespace.Backend) time.Time {
 	if b.State == "active" {
 		return b.QueryStart
 	}
@@ -229,7 +229,7 @@ func (m model) updateBackendsTable() model {
 		}
 		app := text(orDash(b.Application), styles.ToneBody)
 		if b.Application == m.appName() {
-			app = text("pgui", styles.ToneFaint)
+			app = text("tablespace", styles.ToneFaint)
 		}
 		wait := text("-", styles.ToneFaint)
 		switch {
@@ -303,13 +303,13 @@ func (m model) applyDatabases(msg messages.DatabasesLoadedMsg) (model, tea.Cmd) 
 		if onPage {
 			m.refreshedAt = time.Now()
 		}
-		prune(o.selectedDatabases, o.databases, func(d pgui.Database) string { return d.Name })
+		prune(o.selectedDatabases, o.databases, func(d tablespace.Database) string { return d.Name })
 		switch {
 		case o.cursorTo != "":
-			o.selectedDatabase = follow(m.getFilteredDatabases(), o.selectedDatabase, func(d pgui.Database) bool { return d.Name == o.cursorTo })
+			o.selectedDatabase = follow(m.getFilteredDatabases(), o.selectedDatabase, func(d tablespace.Database) bool { return d.Name == o.cursorTo })
 			o.cursorTo = ""
 		case ok:
-			o.selectedDatabase = follow(m.getFilteredDatabases(), o.selectedDatabase, func(d pgui.Database) bool { return d.Name == prev.Name })
+			o.selectedDatabase = follow(m.getFilteredDatabases(), o.selectedDatabase, func(d tablespace.Database) bool { return d.Name == prev.Name })
 		}
 		m = m.updateDatabasesTable()
 	}
@@ -342,9 +342,9 @@ func (m model) applyBackends(msg messages.BackendsLoadedMsg) (model, tea.Cmd) {
 		if onTab || onDetails {
 			m.refreshedAt = time.Now()
 		}
-		prune(o.selectedBackends, o.backends, func(b pgui.Backend) int { return b.PID })
+		prune(o.selectedBackends, o.backends, func(b tablespace.Backend) int { return b.PID })
 		if ok {
-			o.selectedBackend = follow(m.getFilteredBackends(), o.selectedBackend, func(b pgui.Backend) bool { return b.PID == prev.PID })
+			o.selectedBackend = follow(m.getFilteredBackends(), o.selectedBackend, func(b tablespace.Backend) bool { return b.PID == prev.PID })
 		}
 		m = m.updateBackendsTable()
 		if onDetails {
@@ -532,7 +532,7 @@ func (m model) databasesKey(msg tea.KeyPressMsg) (model, tea.Cmd) {
 		if m, cmd, refused := m.refuseReadOnly(); refused {
 			return m, cmd
 		}
-		names, hidden := selectedWithHidden(o.selectedDatabases, m.getFilteredDatabases(), func(d pgui.Database) string { return d.Name }, m.currentDatabase)
+		names, hidden := selectedWithHidden(o.selectedDatabases, m.getFilteredDatabases(), func(d tablespace.Database) string { return d.Name }, m.currentDatabase)
 		if len(names) == 0 {
 			if hidden > 0 {
 				return m.setStatus("the selected databases are hidden by the filter", styles.ToneWarning)
@@ -568,7 +568,7 @@ func (m model) activityKey(msg tea.KeyPressMsg) (model, tea.Cmd) {
 			return m, commands.CopyToClipboard(b.Query)
 		}
 	case key.Matches(msg, m.keys.CancelQuery), key.Matches(msg, m.keys.Delete):
-		pids, hidden := selectedWithHidden(o.selectedBackends, m.getFilteredBackends(), func(b pgui.Backend) int { return b.PID }, m.currentBackend)
+		pids, hidden := selectedWithHidden(o.selectedBackends, m.getFilteredBackends(), func(b tablespace.Backend) int { return b.PID }, m.currentBackend)
 		if len(pids) == 0 {
 			if hidden > 0 {
 				return m.setStatus("the selected backends are hidden by the filter", styles.ToneWarning)
@@ -609,5 +609,5 @@ func (m model) overviewHint() []string {
 	if m.state.databaseOverview.tab == tabActivity {
 		return []string{"client backends first, the longest running at the top", "longest running first"}
 	}
-	return []string{"› marks the database pgui is connected to", "› connected"}
+	return []string{"› marks the database you are connected to", "› connected"}
 }

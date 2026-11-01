@@ -10,23 +10,23 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 
-	"github.com/kontrolplane/pgui/pkg/pgui"
-	"github.com/kontrolplane/pgui/pkg/tui/commands"
-	"github.com/kontrolplane/pgui/pkg/tui/styles"
+	"github.com/kontrolplane/tablespace/pkg/tablespace"
+	"github.com/kontrolplane/tablespace/pkg/tui/commands"
+	"github.com/kontrolplane/tablespace/pkg/tui/styles"
 )
 
 type backendDetailsState struct {
-	backend pgui.Backend
+	backend tablespace.Backend
 	blocks  []int // the backends waiting on this one
 	gone    bool  // it is no longer listed
 	view    scroller
 }
 
-func (m model) BackendDetailsSwitchPage(b pgui.Backend) (model, tea.Cmd) {
+func (m model) BackendDetailsSwitchPage(b tablespace.Backend) (model, tea.Cmd) {
 	m.error = ""
 	d := &m.state.backendDetails
 	d.backend, d.gone = b, false
-	d.blocks = pgui.Blocks(b.PID, m.state.databaseOverview.backends)
+	d.blocks = tablespace.Blocks(b.PID, m.state.databaseOverview.backends)
 	d.view = newScroller()
 	m = m.SwitchPage(backendDetails)
 	m.refreshedAt = time.Now()
@@ -45,13 +45,13 @@ func (m model) backendDetailsGoBack() (model, tea.Cmd) {
 // screen as it was last seen.
 func (m model) syncBackendDetails() model {
 	d := &m.state.backendDetails
-	i := slices.IndexFunc(m.state.databaseOverview.backends, func(b pgui.Backend) bool { return b.PID == d.backend.PID })
+	i := slices.IndexFunc(m.state.databaseOverview.backends, func(b tablespace.Backend) bool { return b.PID == d.backend.PID })
 	if i < 0 {
 		d.gone = true
 		return m
 	}
 	d.backend, d.gone = m.state.databaseOverview.backends[i], false
-	d.blocks = pgui.Blocks(d.backend.PID, m.state.databaseOverview.backends)
+	d.blocks = tablespace.Blocks(d.backend.PID, m.state.databaseOverview.backends)
 	return m
 }
 
@@ -217,15 +217,15 @@ func (m model) BackendSignalView() string {
 	if s.hidden > 0 {
 		body = append(body, styles.Faint(fmt.Sprintf("%s hidden by the filter %s not included.", plural(s.hidden, "selected backend"), isAre(s.hidden))))
 	}
-	if slices.ContainsFunc(m.state.databaseOverview.backends, func(b pgui.Backend) bool { return b.Self && slices.Contains(s.pids, b.PID) }) {
-		body = append(body, styles.Render(styles.S("one of them is a session of pgui itself.", styles.ToneWarning)))
+	if slices.ContainsFunc(m.state.databaseOverview.backends, func(b tablespace.Backend) bool { return b.Self && slices.Contains(s.pids, b.PID) }) {
+		body = append(body, styles.Render(styles.S("one of them is a session of this program.", styles.ToneWarning)))
 	}
 	return confirmDialog(s.title(), prompt, body, s.selected)
 }
 
 // backendLabel names a backend in a dialog by its pid, user and query.
 func (m model) backendLabel(pid int) string {
-	i := slices.IndexFunc(m.state.databaseOverview.backends, func(b pgui.Backend) bool { return b.PID == pid })
+	i := slices.IndexFunc(m.state.databaseOverview.backends, func(b tablespace.Backend) bool { return b.PID == pid })
 	if i < 0 {
 		return fmt.Sprintf("pid %d", pid)
 	}

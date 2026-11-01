@@ -4,15 +4,15 @@ import (
 	"charm.land/bubbles/v2/key"
 	tea "charm.land/bubbletea/v2"
 
-	"github.com/kontrolplane/pgui/pkg/pgui"
-	"github.com/kontrolplane/pgui/pkg/tui/commands"
-	"github.com/kontrolplane/pgui/pkg/tui/styles"
+	"github.com/kontrolplane/tablespace/pkg/tablespace"
+	"github.com/kontrolplane/tablespace/pkg/tui/commands"
+	"github.com/kontrolplane/tablespace/pkg/tui/styles"
 )
 
 // tableDropState asks to type the name of a table before it is dropped or emptied, neither of
 // which can be undone.
 type tableDropState struct {
-	table    pgui.Table
+	table    tablespace.Table
 	truncate bool
 	confirm  typedConfirm
 }

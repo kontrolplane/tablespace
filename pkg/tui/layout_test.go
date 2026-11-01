@@ -10,9 +10,9 @@ import (
 	"charm.land/lipgloss/v2"
 	"github.com/charmbracelet/x/ansi"
 
-	"github.com/kontrolplane/pgui/pkg/client"
-	"github.com/kontrolplane/pgui/pkg/pgui"
-	"github.com/kontrolplane/pgui/pkg/tui/messages"
+	"github.com/kontrolplane/tablespace/pkg/client"
+	"github.com/kontrolplane/tablespace/pkg/tablespace"
+	"github.com/kontrolplane/tablespace/pkg/tui/messages"
 )
 
 // raceEnabled leaves the values of megabytes out of the sweep, which takes minutes under the race
@@ -28,17 +28,17 @@ var layoutSizes = [][2]int{
 
 var nastyName = strings.Repeat("very_long_identifier_", 6) + "日本語🚀"
 
-func nastyDatabases() []pgui.Database {
-	return []pgui.Database{
+func nastyDatabases() []tablespace.Database {
+	return []tablespace.Database{
 		{Name: nastyName, Owner: nastyName, Encoding: "UTF8", Collation: "en_US.UTF-8", Size: 1 << 50, SizeKnown: true, Connections: 123456, AllowConn: true, Comment: strings.Repeat("comment ", 40)},
 		{Name: "tab\there\x1b[31m", Owner: "x", AllowConn: true},
 		{Name: "template0", Template: true},
 	}
 }
 
-func nastyBackends() []pgui.Backend {
+func nastyBackends() []tablespace.Backend {
 	long := time.Now().Add(-49 * time.Hour)
-	return []pgui.Backend{
+	return []tablespace.Backend{
 		{PID: 2147483647, User: nastyName, Database: nastyName, Application: nastyName, Client: "[2001:db8::1]:65535", State: "active",
 			WaitEventType: "Lock", WaitEvent: "transactionid", Query: "select\n\t" + strings.Repeat("a_column, ", 500) + "\x1b]0;pwned\x07 from t",
 			Type: "client backend", BackendStart: long, XactStart: long, QueryStart: long, StateChange: long, BlockedBy: []int{1, 2, 3, 4, 5, 6, 7, 8}},
@@ -47,50 +47,50 @@ func nastyBackends() []pgui.Backend {
 	}
 }
 
-func nastyTables() []pgui.Table {
-	return []pgui.Table{
-		{OID: 1, Schema: nastyName, Name: nastyName, Kind: pgui.KindTable, Owner: nastyName, Comment: strings.Repeat("c ", 200),
+func nastyTables() []tablespace.Table {
+	return []tablespace.Table{
+		{OID: 1, Schema: nastyName, Name: nastyName, Kind: tablespace.KindTable, Owner: nastyName, Comment: strings.Repeat("c ", 200),
 			Estimate: 1 << 60, LiveRows: 1 << 60, DeadRows: 1 << 61, TotalBytes: 1 << 60, TableBytes: 1 << 59, IndexBytes: 1 << 59,
 			SeqScans: 1 << 62, IdxScans: 1 << 62, Inserted: 1 << 62, Updated: 1 << 62, Deleted: 1 << 62, LastVacuum: time.Now()},
-		{OID: 2, Schema: "s", Name: "v", Kind: pgui.KindView, Estimate: -1},
-		{OID: 3, Schema: "s", Name: "p", Kind: pgui.KindTable, Partition: true},
+		{OID: 2, Schema: "s", Name: "v", Kind: tablespace.KindView, Estimate: -1},
+		{OID: 3, Schema: "s", Name: "p", Kind: tablespace.KindTable, Partition: true},
 	}
 }
 
 // nastyPage returns rows with many columns, nulls, control characters and, but under -short, a
 // value of megabytes.
-func nastyPage(short bool) pgui.Page {
-	var fields []pgui.Field
+func nastyPage(short bool) tablespace.Page {
+	var fields []tablespace.Field
 	for i := range 300 {
-		fields = append(fields, pgui.Field{Name: fmt.Sprintf("column_%03d_%s", i, nastyName), Type: 25})
+		fields = append(fields, tablespace.Field{Name: fmt.Sprintf("column_%03d_%s", i, nastyName), Type: 25})
 	}
 	fields[1].Type, fields[2].Type, fields[3].Type = oidJSONB, 1700, oidBytea
 	big := `{"k": "` + strings.Repeat("x", 5000) + `"}`
 	if !short {
 		big = `{"k": "` + strings.Repeat("漢字 ", 1<<20) + `"}`
 	}
-	var rows []pgui.Row
+	var rows []tablespace.Row
 	for r := range 150 {
-		values := make([]pgui.Value, len(fields))
+		values := make([]tablespace.Value, len(fields))
 		for i := range values {
 			switch {
 			case i%7 == 0:
-				values[i] = pgui.Value{Null: true}
+				values[i] = tablespace.Value{Null: true}
 			case i == 1:
-				values[i] = pgui.Value{Text: big}
+				values[i] = tablespace.Value{Text: big}
 			default:
-				values[i] = pgui.Value{Text: "line1\n\tline2 \x1b[2J 日本語 🚀 " + strings.Repeat("w", r)}
+				values[i] = tablespace.Value{Text: "line1\n\tline2 \x1b[2J 日本語 🚀 " + strings.Repeat("w", r)}
 			}
 		}
-		rows = append(rows, pgui.Row{Key: []string{fmt.Sprint(r)}, Values: values})
+		rows = append(rows, tablespace.Row{Key: []string{fmt.Sprint(r)}, Values: values})
 	}
-	return pgui.Page{Fields: fields, Rows: rows, Next: []string{"0"}}
+	return tablespace.Page{Fields: fields, Rows: rows, Next: []string{"0"}}
 }
 
 func layoutModel(t *testing.T, w, h int) model {
-	m := newModel("test", "pgui")
+	m := newModel("test", "tablespace")
 	m.info = client.Info{Host: strings.Repeat("host", 30) + ":5432", User: nastyName, Database: nastyName}
-	m.server = pgui.Server{Version: "18.3", Database: nastyName, User: nastyName, Replica: true, ReadOnly: true, Connections: 99, MaxConnections: 100, DatabaseSize: 1 << 50, Started: time.Now().Add(-1000 * time.Hour)}
+	m.server = tablespace.Server{Version: "18.3", Database: nastyName, User: nastyName, Replica: true, ReadOnly: true, Connections: 99, MaxConnections: 100, DatabaseSize: 1 << 50, Started: time.Now().Add(-1000 * time.Hour)}
 	m.serverOK = true
 	m.state.sqlEditor.history = []string{"select 1", strings.Repeat("select x from y; ", 100)}
 	m, _ = update(t, m, tea.WindowSizeMsg{Width: w, Height: h},
@@ -132,15 +132,15 @@ func layoutPages(t *testing.T, w, h int, short bool) map[string]model {
 	dd, _ = dd.DatabaseDetailsSwitchPage()
 	dd, _ = update(t, dd, messages.TablesLoadedMsg{Database: nastyName, Tables: nastyTables()})
 	pages["tables"] = dd
-	ix, _ := update(t, dd, press("tab"), messages.IndexesLoadedMsg{Database: nastyName, Indexes: []pgui.Index{{Schema: nastyName, Table: nastyName, Name: nastyName, Definition: strings.Repeat("def ", 100), Bytes: 1 << 60, Scans: 1 << 62}}})
+	ix, _ := update(t, dd, press("tab"), messages.IndexesLoadedMsg{Database: nastyName, Indexes: []tablespace.Index{{Schema: nastyName, Table: nastyName, Name: nastyName, Definition: strings.Repeat("def ", 100), Bytes: 1 << 60, Scans: 1 << 62}}})
 	pages["indexes"] = ix
 
 	td, _ := dd.TableDetailsSwitchPage(nastyTables()[0])
-	cols := []pgui.Column{{Name: nastyName, Type: strings.Repeat("character varying(10485760)", 3), Default: strings.Repeat("nextval('x'::regclass)", 10), Comment: nastyName}}
+	cols := []tablespace.Column{{Name: nastyName, Type: strings.Repeat("character varying(10485760)", 3), Default: strings.Repeat("nextval('x'::regclass)", 10), Comment: nastyName}}
 	td, _ = update(t, td,
 		messages.TableLoadedMsg{OID: 1, Table: nastyTables()[0]},
-		messages.SchemaLoadedMsg{OID: 1, Columns: cols, Paging: pgui.Paging{Key: []string{nastyName}, Types: []string{"text"}},
-			Constraints: []pgui.Constraint{{Name: nastyName, Kind: "foreign key", Definition: strings.Repeat("references x ", 40)}}})
+		messages.SchemaLoadedMsg{OID: 1, Columns: cols, Paging: tablespace.Paging{Key: []string{nastyName}, Types: []string{"text"}},
+			Constraints: []tablespace.Constraint{{Name: nastyName, Kind: "foreign key", Definition: strings.Repeat("references x ", 40)}}})
 	td, _ = update(t, td, messages.RowsLoadedMsg{OID: 1, Gen: td.rowsGen, Page: nastyPage(short)})
 	pages["rows"] = td
 	sel, _ := update(t, td, press("space"), press("down"), press("space"))
@@ -166,17 +166,17 @@ func layoutPages(t *testing.T, w, h int, short bool) map[string]model {
 
 	e, _ := layoutModel(t, w, h).SQLEditorSwitchPage(strings.Repeat("select 1;\n", 100))
 	page := nastyPage(short)
-	values := make([][]pgui.Value, len(page.Rows))
+	values := make([][]tablespace.Value, len(page.Rows))
 	for i, r := range page.Rows {
 		values[i] = r.Values
 	}
-	e, _ = update(t, e, messages.QueryRanMsg{Gen: 0, Result: pgui.QueryResult{
-		Statements: []pgui.Statement{{Tag: "SELECT 150"}, {Tag: "INSERT 0 1"}}, Fields: page.Fields, Rows: values, Total: 99999, InTx: true}})
+	e, _ = update(t, e, messages.QueryRanMsg{Gen: 0, Result: tablespace.QueryResult{
+		Statements: []tablespace.Statement{{Tag: "SELECT 150"}, {Tag: "INSERT 0 1"}}, Fields: page.Fields, Rows: values, Total: 99999, InTx: true}})
 	pages["sql editor"] = e
 	hist, _ := update(t, e, press("ctrl+r"))
 	pages["sql history"] = hist
 	failed := e
-	failed.state.sqlEditor.result = &pgui.QueryResult{}
+	failed.state.sqlEditor.result = &tablespace.QueryResult{}
 	failed.state.sqlEditor.errText = strings.Repeat("syntax error at or near x\n", 50)
 	pages["sql error"] = failed
 	return pages

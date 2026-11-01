@@ -1,4 +1,4 @@
-package pgui
+package tablespace
 
 import (
 	"context"
@@ -10,7 +10,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/kontrolplane/pgui/internal/pgtest"
+	"github.com/kontrolplane/tablespace/internal/pgtest"
 )
 
 func TestMain(m *testing.M) { pgtest.Main(m) }
@@ -69,7 +69,7 @@ func TestGetServer(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.HasPrefix(s.Version, "18") || s.User != "pgui" || s.MaxConnections == 0 || s.Connections == 0 || s.DatabaseSize == 0 || s.Started.IsZero() {
+	if !strings.HasPrefix(s.Version, "18") || s.User != "tablespace" || s.MaxConnections == 0 || s.Connections == 0 || s.DatabaseSize == 0 || s.Started.IsZero() {
 		t.Errorf("unexpected server %+v", s)
 	}
 	if s.Replica || s.ReadOnly {
@@ -85,7 +85,7 @@ func TestDatabases(t *testing.T) {
 		t.Fatal(err)
 	}
 	i := slices.IndexFunc(dbs, func(d Database) bool { return d.Name == name })
-	if i < 0 || !dbs[i].SizeKnown || dbs[i].Owner != "pgui" || dbs[i].Connections == 0 {
+	if i < 0 || !dbs[i].SizeKnown || dbs[i].Owner != "tablespace" || dbs[i].Connections == 0 {
 		t.Fatalf("expected %s with its size and connections, got %+v", name, dbs)
 	}
 	if !slices.ContainsFunc(dbs, func(d Database) bool { return d.Name == "template0" && d.Template && !d.AllowConn }) {

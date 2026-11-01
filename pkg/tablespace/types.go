@@ -1,7 +1,7 @@
-// Package pgui reads and changes what the interface shows: databases, tables and their rows,
-// sessions, and the queries typed in the editor. It returns its own types, so the interface never
-// handles a pgx value.
-package pgui
+// Package tablespace reads and changes what the interface shows: databases, tables and their
+// rows, sessions, and the queries typed in the editor. It returns its own types, so the interface
+// never handles a pgx value.
+package tablespace
 
 import (
 	"strings"
@@ -167,7 +167,7 @@ type Backend struct {
 	QueryStart    time.Time
 	StateChange   time.Time
 	BlockedBy     []int
-	Self          bool // the session pgui itself runs on
+	Self          bool // the session the program itself runs on
 }
 
 // Blocks returns the pids of the backends waiting on the one with pid.
