@@ -2,10 +2,13 @@ package client
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 // clearEnv unsets the variables libpq reads, for the duration of the test.
@@ -126,5 +129,17 @@ func TestDescribeUnreachable(t *testing.T) {
 	msg := Describe(err, "pgui")
 	if !strings.Contains(msg, "is the server running?") || strings.Contains(msg, "hunter2") {
 		t.Errorf("unexpected %q", msg)
+	}
+}
+
+func TestDescribeServerRefusal(t *testing.T) {
+	err := fmt.Errorf("failed to connect: tls error: refused; %w", &pgconn.PgError{Severity: "FATAL", Code: "28P01", Message: `password authentication failed for user "app"`})
+	msg := Describe(err, "pgui")
+	if !strings.HasPrefix(msg, `error connecting to postgres: password authentication failed for user "app"`+"\n") || strings.Contains(msg, "tls") || !strings.Contains(msg, "PGPASSWORD") {
+		t.Errorf("unexpected %q", msg)
+	}
+	msg = Describe(&pgconn.PgError{Code: "3D000", Message: `database "shop" does not exist`}, "pgui")
+	if !strings.Contains(msg, "--dbname") {
+		t.Errorf("expected a hint at --dbname, got %q", msg)
 	}
 }

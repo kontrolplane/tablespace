@@ -210,12 +210,22 @@ func redactPasswordSetting(s string) string {
 	}
 }
 
-// Describe words a connection error for the terminal, with a hint when the server could not be
-// reached at all.
+// Describe words a connection error for the terminal. When the server said why it refused, that
+// is all it says, without the attempts libpq made on the way, with a hint at what to change.
 func Describe(err error, program string) string {
-	msg := "error connecting to postgres: " + Redact(err.Error())
 	var pgErr *pgconn.PgError
-	if !errors.As(err, &pgErr) && isUnreachable(err) {
+	if errors.As(err, &pgErr) {
+		msg := "error connecting to postgres: " + pgErr.Message
+		switch pgErr.Code {
+		case "28P01", "28000":
+			msg += fmt.Sprintf("\npass the password with PGPASSWORD or ~/.pgpass, or pick a user with --user (see %s --help)", program)
+		case "3D000":
+			msg += fmt.Sprintf("\npick a database with --dbname, it defaults to the user name (see %s --help)", program)
+		}
+		return msg
+	}
+	msg := "error connecting to postgres: " + Redact(err.Error())
+	if isUnreachable(err) {
 		msg += fmt.Sprintf("\nis the server running? pick one with --host, --dbname or PGHOST (see %s --help)", program)
 	}
 	return msg
