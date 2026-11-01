@@ -26,3 +26,9 @@ updates:
     directory: /
     schedule:
       interval: weekly
+
+  - package-ecosystem: docker-compose
+    directory: /
+    schedule:
+      interval: weekly
+    # a new postgres major starts from an empty data directory, remove ./volume when merging one

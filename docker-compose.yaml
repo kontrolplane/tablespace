@@ -5,12 +5,14 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: postgres
-      PGDATA: /var/lib/postgresql/data
+    # initdb sizes max_connections and shared_buffers to the shared memory it finds, and docker
+    # gives a container 64 MB, which leaves a server allowing 20 connections.
+    shm_size: 256mb
     ports:
       - "127.0.0.1:5432:5432"
+    # postgres 18 keeps its data in a directory per major version under /var/lib/postgresql.
     volumes:
-      - "${PG_VOLUME_DIR:-./volume}:/var/lib/postgresql/data"
+      - "${PG_VOLUME_DIR:-./volume}:/var/lib/postgresql"
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "postgres"]
       interval: 5s
