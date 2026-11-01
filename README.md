@@ -1,7 +1,7 @@
 <p align="center">
   <h1 align="center">
     <a href="https://kontrolplane.dev">
-      <img width="1500" alt="kontrolplane header" src="./assets/kontrolplane-header.svg">
+      <img width="1500" alt="kontrolplane pgui" src="./assets/kontrolplane-header.svg">
     </a>
   </h1>
 </p>
@@ -79,6 +79,12 @@ With [go](https://go.dev/) 1.26+ installed:
 go install github.com/kontrolplane/pgui@latest
 ```
 
+With [homebrew](https://brew.sh/) on macos or linux:
+
+```bash
+brew install kontrolplane/tap/pgui
+```
+
 Prebuilt binaries for linux, macos and windows are attached to the [GitHub releases](https://github.com/kontrolplane/pgui/releases), together with a `checksums.txt` to verify the download.
 
 A container image for linux/amd64 and linux/arm64 is published to `ghcr.io/kontrolplane/pgui`, tagged with the release version and `latest` for releases, and `main` for the latest commit on main:
@@ -119,7 +125,7 @@ pgui --service production --read-only
 
 ## development
 
-pgui uses a local PostgreSQL server, running in Docker.
+pgui uses a local PostgreSQL 18 server, running in Docker on `localhost:5432` with the user and password `postgres`.
 
 - [docker](https://www.docker.com/)
 - [earthly](https://earthly.dev/)
@@ -130,7 +136,7 @@ pgui uses a local PostgreSQL server, running in Docker.
 docker compose up -d --wait
 ```
 
-The project includes an [Earthfile](./Earthfile) with targets to quickly set up sample databases for development.
+The project includes an [Earthfile](./Earthfile) with targets to quickly set up sample databases for development. Each of them starts the server first when it is not running.
 
 **create the sample databases**
 
@@ -164,7 +170,7 @@ Start PostgreSQL, create the sample databases, build and run in one go:
 earthly +dev && PGPASSWORD=postgres ./build/kontrolplane/pgui --host localhost --user postgres --dbname shop
 ```
 
-Seeding skips databases that already exist, so this can be rerun. The files under [seed/databases](./seed/databases) hold one database each. `psql` is used to load them when it is installed, the one in the container otherwise. Remove the `volume` directory after `docker compose down` to start from scratch.
+Seeding skips databases that already exist, so this can be rerun. The files under [seed/databases](./seed/databases) hold one database each. `psql` is used to load them when it is installed, the one in the container otherwise. The data is kept in the `volume` directory, or the one `PG_VOLUME_DIR` names; remove it after `docker compose down` to start from scratch.
 
 The tests start an embedded PostgreSQL, downloaded once to `~/.embedded-postgres-go`, so they do not need Docker:
 
@@ -183,5 +189,5 @@ go test ./...
 </br>
 
 <p align="center">
-  <img width="1500" alt="kontrolplane footer" src="./assets/kontrolplane-footer.svg">
+  <img width="1500" alt="" src="./assets/kontrolplane-footer.svg">
 </p>
