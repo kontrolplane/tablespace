@@ -1,0 +1,18 @@
+services:
+  postgres:
+    container_name: "${PG_DOCKER_NAME:-pgui-postgres}"
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+      PGDATA: /var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - "${PG_VOLUME_DIR:-./volume}:/var/lib/postgresql/data"
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
